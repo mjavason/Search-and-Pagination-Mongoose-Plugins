@@ -294,7 +294,7 @@ app.post('/user/advanced-search', async (req: Request, res: Response) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *         description: The user's ID
  *     responses:
  *       200:
@@ -328,7 +328,7 @@ app.get('/user/:id', async (req: Request, res: Response) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *         description: The user's ID
  *     requestBody:
  *       required: true
@@ -383,7 +383,7 @@ app.put('/user/:id', async (req: Request, res: Response) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *         description: The user's ID
  *     responses:
  *       204:
