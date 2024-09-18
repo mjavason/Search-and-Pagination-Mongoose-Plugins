@@ -66,7 +66,7 @@ app.post('/user', async (req: Request, res: Response) => {
     if (isDuplicate) {
       await session.abortTransaction();
       session.endSession(); // Always end the session
-      
+
       return res
         .status(403)
         .send({ success: false, message: 'Email already exists' });
@@ -112,6 +112,171 @@ app.get('/user', async (req: Request, res: Response) => {
   try {
     const users = await UserModel.find({});
     return res.json({ success: true, message: 'Successful', data: users });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /user/search:
+ *   get:
+ *     summary: Search users with pagination
+ *     description: Retrieve a list of users based on search criteria with pagination support.
+ *     tags: [User]
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         schema:
+ *           type: string
+ *         description: Search term to filter users.
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination.
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of users per page.
+ *     responses:
+ *       200:
+ *         description: List of users matching the search criteria with pagination.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     nextPage:
+ *                       type: integer
+ *                       nullable: true
+ *                     hasPreviousPage:
+ *                       type: boolean
+ *                     totalPages:
+ *                       type: integer
+ *                     totalCount:
+ *                       type: integer
+ *       500:
+ *         description: Internal server error
+ */
+app.get('/user/search', async (req: Request, res: Response) => {
+  const { query, page = 1, limit = 10 } = req.query;
+
+  try {
+    const filter = query
+      ? { email: { $regex: query as string, $options: 'i' } }
+      : {};
+
+    const options = {
+      page: Number(page),
+      limit: Number(limit),
+    };
+
+    const result = await UserModel.paginate(filter, options);
+
+    return res.json({
+      success: true,
+      message: 'Successful',
+      data: result.data,
+      pagination: result.pagination,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /user/advanced-search:
+ *   post:
+ *     summary: Advanced search users
+ *     description: Perform an advanced search on users with more complex filters.
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               query:
+ *                 type: string
+ *                 description: Search term.
+ *               filters:
+ *                 type: object
+ *                 description: Additional filter criteria.
+ *                 example:
+ *                   age: { $gte: 25 }
+ *                   isActive: true
+ *               page:
+ *                 type: integer
+ *                 default: 1
+ *               limit:
+ *                 type: integer
+ *                 default: 10
+ *     responses:
+ *       200:
+ *         description: List of users matching the advanced search criteria.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     nextPage:
+ *                       type: integer
+ *                       nullable: true
+ *                     hasPreviousPage:
+ *                       type: boolean
+ *                     totalPages:
+ *                       type: integer
+ *                     totalCount:
+ *                       type: integer
+ *       500:
+ *         description: Internal server error
+ */
+app.post('/user/advanced-search', async (req: Request, res: Response) => {
+  const { query, filters = {}, page = 1, limit = 10 } = req.body;
+
+  try {
+    const searchFilter = query
+      ? { $or: [{ name: { $regex: query, $options: 'i' } }] }
+      : {};
+    const combinedFilter = { ...searchFilter, ...filters };
+
+    const options = {
+      page: Number(page),
+      limit: Number(limit),
+    };
+
+    const result = await UserModel.paginate(combinedFilter, options);
+
+    return res.json({
+      success: true,
+      message: 'Successful',
+      data: result.data,
+      pagination: result.pagination,
+    });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

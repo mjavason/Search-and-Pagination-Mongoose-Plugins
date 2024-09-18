@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import mongooseAutoPopulate from 'mongoose-autopopulate';
+import { paginatePlugin, searchPlugin } from './db-plugins';
 
 dotenv.config();
 
@@ -13,6 +14,11 @@ export async function connectToDatabase(
   connectionString = DB_CONNECTION_STRING
 ) {
   try {
+    // mongoose
+    // .plugin(mongooseAutoPopulate)
+    // .plugin(paginatePlugin)
+    // .plugin(searchPlugin);
+
     await mongoose.connect(connectionString, {
       autoIndex: false,
       maxPoolSize: 10,
@@ -62,7 +68,7 @@ export const ProfileModel = mongoose.model(
 );
 
 // User schema with reference to Profile
-export const UserModel = mongoose.model(
+export const UserModel:any = mongoose.model(
   'User',
   new mongoose.Schema(
     {
@@ -85,5 +91,8 @@ export const UserModel = mongoose.model(
         },
       },
     }
-  ).plugin(mongooseAutoPopulate)
+  )
+    .plugin(mongooseAutoPopulate)
+    .plugin(paginatePlugin)
+    .plugin(searchPlugin)
 );
